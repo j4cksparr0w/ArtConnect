@@ -78,6 +78,13 @@ if not exhibitions:
 exh = st.selectbox("Odaberi izložbu", exhibitions, format_func=lambda e: f"#{e.id} — {e.theme}")
 st.subheader(exh.theme)
 st.write(exh.description)
+if st.session_state.role == "mentor":
+    st.warning("Ova akcija briše izložbu, sve slike i sve komentare.")
+    if st.button("🗑️ Obriši izložbu"):
+        repos.delete_exhibition(exh.id)
+        st.success("Izložba obrisana.")
+        st.rerun()
+
 
 st.caption(f"Broj radova: {len(repos.list_artworks(exh.id))}")
 
@@ -98,8 +105,13 @@ for a in artworks:
     col1, col2 = st.columns([2, 1])
     with col1:
         st.image(a.path, caption=a.filename, use_container_width=True)
-    with col2:
+    with col2:        
         likes = repos.like_count(a.id)
+        if st.session_state.role == "mentor":
+            if st.button("🗑️ Obriši sliku", key=f"del_art_{a.id}"):
+                repos.delete_artwork(a.id)
+                st.rerun()
+
         if st.button(f"❤️ Like ({likes})", key=f"like_{a.id}"):
             repos.toggle_like(st.session_state.uid, a.id)
             st.rerun()
@@ -111,5 +123,12 @@ for a in artworks:
                 st.rerun()
 
         st.write("**Komentari:**")
-        for user, text in repos.list_comments(a.id)[:5]:
-            st.write(f"- **{user}**: {text}")
+        for cid, user, text in repos.list_comments(a.id)[:5]:
+            colc1, colc2 = st.columns([10, 1])
+            with colc1:
+                st.write(f"- **{user}**: {text}")
+            with colc2:
+                if st.session_state.role == "mentor":
+                    if st.button("🗑️", key=f"del_c_{cid}"):
+                        repos.delete_comment(cid)
+                        st.rerun()
