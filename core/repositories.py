@@ -139,10 +139,30 @@ class SqliteRepos(UserRepo, ExhibitionRepo, InteractionRepo):
 
     def list_comments(self, artwork_id: int):
         rows = self.db.execute("""
-          SELECT u.username, c.text
+          SELECT u.username, c.text, c.text
           FROM comments c
           JOIN users u ON u.id=c.user_id
           WHERE c.artwork_id=?
           ORDER BY c.id DESC
         """, (artwork_id,)).fetchall()
-        return [(r["username"], r["text"]) for r in rows]
+        return [(r["id"], r["username"], r["text"]) for r in rows]
+
+    def delete_exhibition(self, exhibition_id: int) -> None:
+        cur = self.db.cursor()
+        cur.execute("DELETE FROM comments WHERE artwork_id IN (SELECT id FROM artworks WHERE exhibition_id=?)", (exhibition_id,))
+        cur.execute("DELETE FROM likes WHERE artwork_id IN (SELECT id FROM artworks WHERE exhibition_id=?)", (exhibition_id,))
+        cur.execute("DELETE FROM artworks WHERE exhibition_id=?", (exhibition_id,))
+        cur.execute("DELETE FROM exhibitions WHERE id=?", (exhibition_id,))
+        self.db.commit()
+
+    def delete_artwork(self, artwork_id: int) -> None:
+        cur = self.db.cursor()
+        cur.execute("DELETE FROM comments WHERE artwork_id=?", (artwork_id,))
+        cur.execute("DELETE FROM likes WHERE artwork_id=?", (artwork_id,))
+        cur.execute("DELETE FROM artworks WHERE id=?", (artwork_id,))
+        self.db.commit()
+
+    def delete_comment(self, comment_id: int) -> None:
+        self.db.execute("DELETE FROM comments WHERE id=?", (comment_id,))
+        self.db.commit()
+
