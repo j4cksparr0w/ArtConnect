@@ -4,7 +4,7 @@ from .database import Database
 
 class UserRepo(Protocol):
     def create_user(self, username: str, password_hash: str, role: str) -> None: ...
-    def find_user(self, username: str) -> Optional[tuple[int, str, str]]: ...  # (id, hash, role)
+    def find_user(self, username: str) -> Optional[tuple[int, str, str]]: ...  
 
 class ExhibitionRepo(Protocol):
     def create_exhibition(self, theme: str, description: str, created_by: int) -> None: ...
@@ -16,7 +16,7 @@ class InteractionRepo(Protocol):
     def toggle_like(self, user_id: int, artwork_id: int) -> None: ...
     def like_count(self, artwork_id: int) -> int: ...
     def add_comment(self, user_id: int, artwork_id: int, text: str) -> None: ...
-    def list_comments(self, artwork_id: int) -> List[tuple[str, str]]: ...  # (username, text)
+    def list_comments(self, artwork_id: int) -> List[tuple[str, str]]: ... 
 
 class SqliteRepos(UserRepo, ExhibitionRepo, InteractionRepo):
     def __init__(self):
@@ -70,7 +70,7 @@ class SqliteRepos(UserRepo, ExhibitionRepo, InteractionRepo):
         """)
         self.db.commit()
 
-    # UserRepo
+
     def create_user(self, username: str, password_hash: str, role: str) -> None:
         self.db.execute(
             "INSERT INTO users(username,password_hash,role) VALUES(?,?,?)",
@@ -87,7 +87,7 @@ class SqliteRepos(UserRepo, ExhibitionRepo, InteractionRepo):
             return None
         return (row["id"], row["password_hash"], row["role"])
 
-    # ExhibitionRepo
+
     def create_exhibition(self, theme: str, description: str, created_by: int) -> None:
         self.db.execute(
             "INSERT INTO exhibitions(theme,description,created_by) VALUES(?,?,?)",
@@ -99,7 +99,7 @@ class SqliteRepos(UserRepo, ExhibitionRepo, InteractionRepo):
         rows = self.db.execute("SELECT id,theme,description FROM exhibitions ORDER BY id DESC").fetchall()
         return [Exhibition(r["id"], r["theme"], r["description"]) for r in rows]
 
-    # InteractionRepo
+
     def add_artwork(self, exhibition_id: int, filename: str, path: str, uploaded_by: int) -> None:
         self.db.execute(
             "INSERT INTO artworks(exhibition_id,filename,path,uploaded_by) VALUES(?,?,?,?)",

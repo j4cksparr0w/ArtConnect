@@ -30,7 +30,7 @@ class ArtConnectService:
 
     def upload_artwork(self, exhibition_id: int, uploaded_file, uploaded_by: int) -> None:
         if not self.policy.can_upload():
-            raise PermissionError("Upload nije dopušten za ovu rolu.")
+            raise PermissionError("Upload is not permitted for this role.")
         payload = StreamlitUploadAdapter.to_payload(uploaded_file)
         path = self.storage.save(exhibition_id, payload)
         self.repos.add_artwork(exhibition_id, payload.name, path, uploaded_by)

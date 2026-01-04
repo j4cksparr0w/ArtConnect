@@ -25,7 +25,7 @@ def _make_service() -> ArtConnectService:
 
 def test_full_flow_register_login_exhibition_upload_like_comment():
     service = _make_service()
-    repos: SqliteRepos = service.repos  # type: ignore
+    repos: SqliteRepos = service.repos 
 
     username = "it_user_integration"
     password = "secret123"

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class User:
     id: int
     username: str
-    role: str  # "student" | "mentor"
+    role: str
 
 @dataclass(frozen=True)
 class Exhibition:
