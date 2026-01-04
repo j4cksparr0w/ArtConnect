@@ -8,7 +8,6 @@ class ImagePayload:
     bytes: bytes
 
 class StreamlitUploadAdapter:
-    """Adapter: Streamlit UploadedFile -> ImagePayload"""
     @staticmethod
     def to_payload(uploaded_file: Any) -> ImagePayload:
         return ImagePayload(name=uploaded_file.name, bytes=uploaded_file.getvalue())
