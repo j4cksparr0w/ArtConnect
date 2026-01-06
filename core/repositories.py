@@ -139,7 +139,7 @@ class SqliteRepos(UserRepo, ExhibitionRepo, InteractionRepo):
 
     def list_comments(self, artwork_id: int):
         rows = self.db.execute("""
-          SELECT u.username, c.text, c.text
+          SELECT c.id, u.username, c.text
           FROM comments c
           JOIN users u ON u.id=c.user_id
           WHERE c.artwork_id=?
