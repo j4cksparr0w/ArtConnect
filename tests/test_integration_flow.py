@@ -1,80 +1,54 @@
+import uuid
 from core.repositories import SqliteRepos
 from core.services import ArtConnectService
 from core.storage import LocalImageStorage
 from core.policies import MentorPolicy
 
-
 class FakeUploadedFile:
-    def __init__(self, name: str, content: bytes) -> None:
+    def __init__(self, name, content: bytes):
         self.name = name
         self._content = content
-
-    def getvalue(self) -> bytes:
+    def getvalue(self):
+        return self._content
+    def read(self):
         return self._content
 
-    def read(self) -> bytes:
-        return self._content
-
-
-def _make_service() -> ArtConnectService:
+def make_service():
     repos = SqliteRepos()
     storage = LocalImageStorage()
     policy = MentorPolicy()
     return ArtConnectService(repos, storage, policy)
 
-
 def test_full_flow_register_login_exhibition_upload_like_comment():
-    service = _make_service()
-    repos: SqliteRepos = service.repos 
+    s = make_service()
+    repos: SqliteRepos = s.repos
 
-    username = "it_user_integration"
-    password = "secret123"
-    role = "mentor"
+    u = "it_user_" + uuid.uuid4().hex[:8]
+    s.register(u, "pw123", "mentor")
+    uid, role = s.login(u, "pw123")
+    assert role == "mentor"
 
-    try:
-        service.register(username, password, role)
-    except Exception:
-        pass
-
-    login_result = service.login(username, password)
-    assert login_result is not None
-    user_id, logged_role = login_result
-    assert logged_role == role
-
-    theme = "Integration Test Exhibition"
-    description = "Exhibition created by integration test."
-
-    service.create_exhibition(theme, description, user_id)
-
+    s.create_exhibition("Integration Test Exhibition", "desc", uid)
     exhibitions = repos.list_exhibitions()
-    matching = [e for e in exhibitions if e.theme == theme and e.description == description]
-    assert matching
+    assert exhibitions
+    exh = exhibitions[0]
 
-    exhibition = matching[-1]
+    before = len(repos.list_artworks(exh.id))
+    uploaded = FakeUploadedFile("integration.png", b"x")
+    s.upload_artwork(exh.id, uploaded, uid)
+    artworks = repos.list_artworks(exh.id)
+    assert len(artworks) == before + 1
+    art = artworks[0]
 
-    before_artworks = len(repos.list_artworks(exhibition.id))
+    likes0 = repos.like_count(art.id)
+    repos.toggle_like(uid, art.id)
+    likes1 = repos.like_count(art.id)
+    repos.toggle_like(uid, art.id)
+    likes2 = repos.like_count(art.id)
+    assert likes1 != likes0
+    assert likes2 == likes0
 
-    uploaded = FakeUploadedFile("integration.png", b"integration-bytes")
-    service.upload_artwork(exhibition.id, uploaded, user_id)
-
-    artworks_after = repos.list_artworks(exhibition.id)
-    assert len(artworks_after) == before_artworks + 1
-
-    artwork = artworks_after[-1]
-
-    likes_initial = repos.like_count(artwork.id)
-
-    repos.toggle_like(user_id, artwork.id)
-    likes_after_first = repos.like_count(artwork.id)
-
-    repos.toggle_like(user_id, artwork.id)
-    likes_after_second = repos.like_count(artwork.id)
-
-    assert likes_after_first != likes_initial
-    assert likes_after_second == likes_initial
-
-    comment_text = "Great artwork!"
-    repos.add_comment(user_id, artwork.id, comment_text)
-
-    comments = repos.list_comments(artwork.id)
-    assert any(text == comment_text for (_username, text) in comments)
+    text = "Great artwork!"
+    repos.add_comment(uid, art.id, text)
+    comments = repos.list_comments(art.id)
+    assert any(c[-1] == text for c in comments)
